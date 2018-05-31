@@ -1,0 +1,36 @@
+
+11 filings, single process, sleep 0.1 second inbetween
+downloaded a section,lets compare time
+153.8244891166687
+
+11 filings, single process, sleep 0.02 second inbetween
+moved webdriver configuration outside
+downloaded a section,let's compare time
+38.11880397796631
+
+11 * 10 paths,single process
+moved webdriver configuation outside, only downloaded 60 filings
+418.4774272441864
+[Finished in 418.8s]
+
+
+11 * 10 paths, 10 threads
+only downloaded 60 filings
+each thread configures webdriver individually
+[Finished in 67.2s]
+
+20 threads [Finished in 73.0s]
+
+
+11 * 10 processes, (out 10 paths)
+only downloaded 60 filings
+each process configures webdriver individually
+64.60023808479309
+[Finished in 64.8s]
+
+48.16811919212341 -- 10 processes
+[Finished in 48.5s]
+
+1 * 1 processes, (out 10 paths)
+24.250160217285156
+[Finished in 24.5s]
