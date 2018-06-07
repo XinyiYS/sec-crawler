@@ -1,12 +1,18 @@
-import random,time,itertools,threading,re
-from re import search
+import random,time,itertools,threading,re,datetime
 import urllib,csv,os, errno, wget
+from re import search
 from urllib.parse import quote,unquote
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from multiprocessing import Pool
 from multiprocessing.dummy import Pool as ThreadPool 
+from multiprocessing import Process
+import shutil
 import IndexDownloader
+import numpy as np
+from math import ceil
+import pandas as pd 
+
 
 def configure_web_driver():
 	# to configure the webdriver 
@@ -23,136 +29,176 @@ def configure_web_driver():
 
 	return driver
 
-def read_log(log_path):
 
-	if not(os.path.isfile(log_path) and os.path.getsize(log_path) > 0):
-		return (-1,[])
-	else:
-		with open(log_path,'r') as log:
-			content = log.readlines()
-			counter = int(content[2])
-			indices = sorted([int(s) for s in re.findall(r'\b\d+\b', content[3])])
-	return (counter,indices)
+def compile_logs(log_folder,interval_update=False):
+	if not os.path.isdir(log_folder):
+		return [0]
+
+	logs = [ (os.path.join(log_folder, logname)) for logname in os.listdir(log_folder) if logname.endswith('.log')]
+
+	rows = []
+	for log in logs:
+		with open(log) as f:
+			rows.extend(f.read().strip().split(' '))
+
+	if not interval_update: # dont write each interval update
+		with open((os.path.join(log_folder, "aggregate log")),'w+') as f:
+			f.write(" ".join(rows))
+
+	rows = [int(row) for row in rows if row.isdigit()]
+
+	return rows
 
 
-def download_data(path):
+def update_database(log_folder,database_path):
+	if not (os.path.isdir(log_folder) and os.path.exists(database_path)):
+
+		if os.path.exists(database_path):
+			df = pd.read_csv(database_path,chunksize = 100000)
+			total = sum([len(chunk) for chunk in df])
+			return 0, total
+		else:
+			return 0,0
+
+	rows = compile_logs(log_folder)
+
+	try:
+		df = pd.read_csv(database_path)
+		df.iloc[rows] = 1
+		total = len(df)
+		completed = df['download'].sum()
+		updated_database = database_path[:-4]+"-copy.csv"
+		df.to_csv(updated_database)
+		os.remove(database_path)
+		os.rename(updated_database,database_path)
+		print("{}/{} filings have been downloaded: {:.2%} complete. Contiuing from last download. \n".format(str(completed), str(total), (completed/total) ))
+	except:
+		print("An error occured at the update, please redo this step.")
+		return
+
+	[os.remove((os.path.join(log_folder, logname))) for logname in os.listdir(log_folder) if logname.endswith('.log')] # remove all the redundant logs
+	return completed, total
+
+
+
+def create_folder(folder_name):
+	try:
+		os.makedirs(folder_name)
+	except OSError as e:
+		if e.errno != errno.EEXIST:
+			raise
+	return
+
+
+def download_data_chunk(chunk):
 
 	driver = configure_web_driver()
 
-	crawlerfolder = "Downloaded index files" # for path reference
+	log_folder = "Download Logs"
+	create_folder(log_folder)
+	log_name = "{}-{}-download.log".format(str(chunk.index[0]),str(chunk.index[-1]))
+	with open(os.path.join(log_folder,log_name),"a") as log:
+		for row_index, row in chunk[chunk['download']==0].iterrows():
 
-	# for logging
-	log_header = search('\d{4}-QTR\d{1}', path).group(0)+'-log'
-	log_path = os.path.join(crawlerfolder, log_header)
-	error_indices = []
-	
-	# check if log_header file exists, if True, continue from last download   
-	counter,missed_indices = read_log(log_path)
-	
-	with open(path,'r') as file, open(log_path,'a') as log: 
-		for index,line in enumerate(file):  # index is 0-based and content starts from index == 9, row number 10 in the file
-			row_index = index + 1
-			if( row_index < 10  or (row_index <= counter and row_index not in missed_indices)):
-				continue # skip downloading
-			comn = line[:62].strip()
-			filing = line[62:72].strip()
-			cik = line[72:83].strip()
-			date = line[83:96].strip()
-			htm = line[96:].strip()
-			# if(row_index==1011):
-			# 	print("downloaded a section,let's compare time")
-			# 	driver.quit()	
-			# 	return
-			print('Start fetching URL to', comn, filing, 'filed on', date, '...')
-			start_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
+			conm = row['conm']
+			htm = row['path']
+			filing = row['type']
+			cik = row['cik']
+			date = row['date']
+			yr_qtr = "{}-QTR{}".format(date[:4],ceil(int(date[5:7])/3))
+
+			if ('/' in filing):
+				filing = quote(filing, safe='') # use percent encoding to escape the slash # use urllib.parse.unquote(encoded_str,'utf8') to decode
+			filing_folder_name = '-'.join([str(row_index),str(filing),str(cik)])
+			filing_folder_path = '/'.join([datafolder, yr_qtr , filing_folder_name])
+
+			# print('Start fetching URL to', conm, filing, 'filed on', date, '...')
+			# start_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
 			try:
 				driver.get(htm)
-				if ('/' in filing):
-					filing = quote(filing,safe='') # use percent encoding to escape the slash # use urllib.parse.unquote(encoded_str,'utf8') to decode
-				filing_folder_name = '-'.join([str(row_index),filing,cik])
-				filing_folder_path = '/'.join([datafolder, log_header[:-4] , filing_folder_name])
-				try:
-					os.makedirs(filing_folder_path)
-				except OSError as e:
-					if e.errno != errno.EEXIST:
-						raise
-				# # the download log is disabled for more efficiency
-	    		# thread_id = threading.get_ident()
-	    		# with open("-".join([str(thread_id), 'test.log']), 'a', newline='') as download_log:
-	    			# download_log.write('****************************************************************\n')
-	    			# download_log.write("Filing url is: " +" "+htm+"\n\n")
+				create_folder(filing_folder_path)
+
 				for a in driver.find_elements_by_xpath('.//a'):
 					url = a.get_attribute('href')    # print(a.get_attribute('href'))
 					if(url.startswith(PREFIX)):
 						filename = url.split('/')[-1]
 						wget.download(url , filing_folder_path + '/'+ filename)
-						# download_log.write("filename is : " +filename +"\n")
-						# download_log.write("link is : "+ url + "\n\n")
-				end_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
-				print('Success!', start_time, ' --> ', end_time, '\n')
-			except:
-				end_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
-				print('Error!', start_time, ' --> ', end_time, '\n')
-				error_indices.append(row_index)
+				
+				# end_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
+				# print('Success!', start_time, ' --> ', end_time,'\n')
 
-	    	# update the log every 10 filings, each uses only 0.02 seconds
-			# if( ( (row_index) % 10 == 0) and (row_index > counter)):  	       
-	        	# s = time.time() 	        	
-			log.truncate(0) # clear
-			log.write( log_header[:-4]+'\n')
-			log.write("1st row: counter. 2nd row: missed row indices.\n")
-			log.write("{}\n{}\n".format(str(row_index),error_indices))
-	       		# print('logging used: {}'.format((time.time()-s)))
-	return 
+				log.write(str(row_index)+" ")
+				log.flush()
+			except:
+				print("Error in downloading this file.",htm)
+				# end_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
+				# print('Error!', start_time, ' --> ', end_time, '\n')
+	return
+
 
 # using threadPool, inherently multithreaded
-def start(n_threads=10):
-	IndexDownloader.download_index_files(2000)
+def start_download(database,n_threads=9):
 
-	start = time.time()
+	log_folder = "Download logs"
+
 	pool = ThreadPool(n_threads) # instantiate multiple threads
-	pool.map(download_data, paths) # run the threads
+
+	df = pd.read_csv(database,chunksize=10000)
+	pool.map(download_data_chunk, df) # run the threads	
 	pool.close() 
 	pool.join() # wait for all to finish
-	end = time.time()
-	print(end-start)
-	print("all done")
+	
+	update_database(log_folder ,database)
 
+	print("all done.")
 	return
 
-def checkStatus(clear=False):
-	crawlerfolder = "Downloaded index files"
-	paths = [ (os.path.join(crawlerfolder, filename)) for filename in os.listdir(crawlerfolder) if filename.endswith('-log')]
+def update(start,interval,log_folder,count,total):
 
-	def get_missed_count(logname):
-		if not(os.path.isfile(logname) and os.path.getsize(logname) > 0):
-			return 0
-		else:
-			with open(logname,'r') as log:
-				return len([int(s) for s in re.findall(r'\b\d+\b', log.readlines()[3])])  # return the number of missed filings
-			
-	sum = sum([get_missed_count(path) for path in paths])
-	print("A total of {} files are missed".format(str(sum)))
-	# print([get_missed_count(path) for path in paths].index(1))
+	log_folder = "Download logs"
+	no_intervals = 0
 
-	def clear_log(logname):
-		with open(logname,'w+') as log: pass
-		return
-	if clear:
-		print("Clearing all the logs, so when re-run, everything will be downloaded again.\n")
-		[clear_log(logname) for logname in paths]	
-	return
+	while(True):
+		end = time.time()
+		seconds_elapsed = end - start
+		if seconds_elapsed > (no_intervals+1) * interval:
 
-PREFIX = "https://www.sec.gov/Archives/edgar/data/" # common prefix for data files
+			rows = compile_logs(log_folder,interval_update=True)
+			completed = len(rows)
+			eta = int(seconds_elapsed / (completed/total))
+			eta_str = datetime.timedelta(seconds=eta)
+			total_completed = completed + count
 
-crawlerfolder = "Downloaded index files"
-paths = [ (os.path.join(crawlerfolder, filename)) for filename in os.listdir(crawlerfolder) if filename.endswith('.txt')]
 
-datafolder = "Downloaded data files"
-try:
-    os.makedirs(datafolder)
-except OSError as e:
-    if e.errno != errno.EEXIST:
-        raise
+			print("This program has run for {:.2f} hours, and downloaded {} filings, at a rate of {:.2f} filings per second.".format((seconds_elapsed/3600),
+			str(completed), (completed/seconds_elapsed)))
+			print("{}/{} filings have been downloaded: {:.2%} complete. Estimated time for completion: {}.\n".format(str(total_completed), str(total), (total_completed/total), eta_str))
+			no_intervals+=1
 
-start(n_threads=len(paths))
+
+if __name__ == '__main__':
+
+	print("Preparing database...")
+	database = IndexDownloader.download_and_convert(year=2016)
+	print("Database preparation successful.")
+
+	PREFIX = "https://www.sec.gov/Archives/edgar/data/" # common prefix for data files
+
+	datafolder = "Downloaded data files"
+	create_folder(datafolder)
+
+	log_folder = "Download logs"
+
+	print("\nStart downloading filings. This will take a while...\n")
+	count, total = update_database(log_folder ,database)
+
+	start_time = time.time()
+	n_threads = 8
+	update_p1 = Process(target=update,args=(start_time,60,log_folder,count,total))
+	download_p2 = Process(target=start_download,args=(database,n_threads,))
+	download_p2.start()
+	update_p1.start()
+	download_p2.join()
+	print("\nDownloading complete.")
+	exit()
+

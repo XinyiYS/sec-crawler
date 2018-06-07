@@ -30,3 +30,4 @@ def clear_log(logname):
 	return
 [clear_log(logname) for logname in paths]	
 
+

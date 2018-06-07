@@ -6,6 +6,9 @@ from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from multiprocessing import Pool
 from multiprocessing.dummy import Pool as ThreadPool 
+import shutil
+import IndexDownloader
+
 
 def configure_web_driver():
 	# to configure the webdriver 
@@ -90,6 +93,13 @@ def download_data(path):
 				end_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
 				print('Success!', start_time, ' --> ', end_time, '\n')
 			except:
+
+				if ('/' in filing):
+					filing = quote(filing,safe='') # use percent encoding to escape the slash # use urllib.parse.unquote(encoded_str,'utf8') to decode
+				filing_folder_name = '-'.join([str(row_index),filing,cik])
+				filing_folder_path = '/'.join([datafolder, log_header[:-4] , filing_folder_name])
+				shutil.rmtree(filing_folder_path, ignore_errors=True) 
+
 				end_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
 				print('Error!', start_time, ' --> ', end_time, '\n')
 				error_indices.append(row_index)
@@ -140,6 +150,8 @@ def checkStatus(clear=False):
 		[clear_log(logname) for logname in paths]	
 	return
 
+IndexDownloader.download_index_files(2018)
+
 PREFIX = "https://www.sec.gov/Archives/edgar/data/" # common prefix for data files
 
 crawlerfolder = "Downloaded index files"
@@ -151,3 +163,4 @@ try:
 except OSError as e:
     if e.errno != errno.EEXIST:
         raise
+start(n_threads=1)
