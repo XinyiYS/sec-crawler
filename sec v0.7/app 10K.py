@@ -243,35 +243,43 @@ def update(start,interval,log_folder,count,total):
 
 if __name__ == '__main__':
 
-	year = 2017
-	print("Preparing database...")
-	database_folder = "Database files"
-	first_csv_path = os.path.join( database_folder , str(year)+"-QTR1.csv")
-	last_csv_path =  os.path.join( database_folder , "2018-QTR1.csv")
 
-	if not (os.path.exists(first_csv_path) & os.path.exists(last_csv_path)):
-		database_folder = IndexDownloader.download_and_convert(year=year)
-	print("Database preparation successful.")
+	try:
+		year = 2017
+		print("Preparing database...")
+		database_folder = "Database files"
+		first_csv_path = os.path.join( database_folder , str(year)+"-QTR1.csv")
+		last_csv_path =  os.path.join( database_folder , "2018-QTR1.csv")
 
-	datafolder = "Downloaded data files"
-	create_folder(datafolder)
+		if not (os.path.exists(first_csv_path) & os.path.exists(last_csv_path)):
+			database_folder = IndexDownloader.download_and_convert(year=year)
+		print("Database preparation successful.")
 
-	log_folder = "Download logs"
+		datafolder = "Downloaded data files"
+		create_folder(datafolder)
 
-	print("\nStart downloading filings. This will take a while...\n")
-	count,total = update_all_csvs(database_folder) # 	count, total = update_database(log_folder ,database)
+		log_folder = "Download logs"
 
-	start_time = time.time()
-	n_threads = 3
-	update_p1 = Process(target=update,args=(start_time,60,log_folder,count,total))
-	download_p2 = Process(target=start_download,args=(database_folder,n_threads,))
-	download_p2.start()
-	# update_p1.start()
+		print("\nStart downloading filings. This will take a while...\n")
+		count,total = update_all_csvs(database_folder) # 	count, total = update_database(log_folder ,database)
 
-	update(start_time ,60,log_folder,count,total)
-	download_p2.join()
-	update_p1.terminate()
-	print("\n all processed terminated")
-	print("\nDownloading complete.")
-	exit()
+		start_time = time.time()
+		n_threads = 3
+		update_p1 = Process(target=update,args=(start_time,60,log_folder,count,total))
+		download_p2 = Process(target=start_download,args=(database_folder,n_threads,))
+		download_p2.start()
+		# update_p1.start()
 
+		update(start_time ,60,log_folder,count,total)
+		download_p2.join()
+		update_p1.terminate()
+		print("\n all processed terminated")
+		print("\nDownloading complete.")
+		exit()
+
+	except KeyboardInterrupt:
+	    print ('Interrupted')
+	    try:
+	        sys.exit(0)
+	    except SystemExit:
+	        os._exit(0)
