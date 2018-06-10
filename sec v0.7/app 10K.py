@@ -170,8 +170,7 @@ def download_data_chunk(chunk):
 					download_log.write(all_urls)
 
 				log.write(str(filing_index)+" ")
-				# log.flush()
-				if (time.time()- start_time()) > update_count * 60:
+				if (time.time()- start_time) > update_count * 60:
 					log.flush()
 					update_count += 1
 
@@ -270,10 +269,6 @@ if __name__ == '__main__':
 	# update_p1.start()
 
 	update(start_time ,60,log_folder,count,total)
-
-
-
-
 	download_p2.join()
 	update_p1.terminate()
 	print("\n all processed terminated")
