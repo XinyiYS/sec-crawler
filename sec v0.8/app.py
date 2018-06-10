@@ -124,10 +124,10 @@ def download_data_chunk(chunk):
 	process,download_entire,iotime = [],[],[]
 	counter = 0
 	with open(os.path.join(log_folder,log_name),"a") as log:
-		filing = '10-K'
-		sub_chunk = chunk[chunk['filing'] == filing]
-		for i_, row in sub_chunk[sub_chunk['download']==0].iterrows():
-		# for row_index, row in chunk[chunk['download']==0].iterrows(): # changed for good
+		# filing = '10-K'
+		# sub_chunk = chunk[chunk['filing'] == filing]
+		# for i_, row in sub_chunk[sub_chunk['download']==0].iterrows():
+		for row_index, row in chunk[chunk['download']==0].iterrows(): # changed for good
 			stamps = []
 			
 			# stamps[0]
