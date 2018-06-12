@@ -231,11 +231,7 @@ def update(start,interval,log_folder,count,total):
 				eta = int(seconds_elapsed / (completed/total))
 				eta_str = datetime.timedelta(seconds=eta)
 			else:
-<<<<<<< HEAD
-				eta_str = "No estimation available yet."
-=======
 				eta_str = "no estimation available yet"
->>>>>>> 6c819e3f41de8e9c8c6417e543cc38c706d7c1d2
 			total_completed = completed + count
 
 			print("This program has run for {:.2f} hours, and downloaded {} filings, at a rate of {:.2f} filings per second.".format((seconds_elapsed/3600),
