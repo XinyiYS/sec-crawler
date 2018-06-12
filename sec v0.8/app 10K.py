@@ -11,7 +11,7 @@ import numpy as np
 from math import ceil
 import pandas as pd 
 from bs4 import BeautifulSoup
-import requests
+import requests,sys
 
 
 def compile_logs(log_folder,interval_update=False):
@@ -44,7 +44,7 @@ def clear_logs(log_folder):
 	except:
 		return
 
-def update_database(log_folder,database_path):
+def update_database(log_folder,database_path,filing):
 	if not (os.path.isdir(log_folder) and os.path.exists(database_path)):
 
 		if os.path.exists(database_path):
@@ -57,6 +57,7 @@ def update_database(log_folder,database_path):
 	filing_indices = compile_logs(log_folder)
 	try:
 		df = pd.read_csv(database_path)
+		df = df[df['filing'] == filing]
 		total = len(df)
 		completed = 0
 
@@ -75,13 +76,13 @@ def update_database(log_folder,database_path):
 	return completed, total
 
 
-def update_all_csvs(database_folder):
+def update_all_csvs(database_folder, filing):
 	database_folder = "Database files" # or use crawlerfolder
 	paths = ([ (os.path.join(database_folder, csv)) for csv in os.listdir(database_folder) if csv.endswith('.csv')])
 
 	count,total = 0 , 0
 	for path in paths:
-		c , t = update_database(log_folder,path)
+		c , t = update_database(log_folder,path,filing)
 		count += c
 		total += t
 
@@ -254,27 +255,29 @@ if __name__ == '__main__':
 
 		log_folder = "Download logs"
 
-		print("\nStart downloading filings. This will take a while...\n")
-		count,total = update_all_csvs(database_folder) # 	count, total = update_database(log_folder ,database)
 
-		start_time = time.time()
-		n_threads = 3
 		filing = '10-K'
-		update_p1 = Process(target=update,args=(start_time,60,log_folder,count,total))
+		count,total = update_all_csvs(database_folder,filing)  #  count, total = update_database(log_folder ,database)
+		n_threads = 3
+
+		print("\nStart downloading filings. This will take a while...\n")
+		start_time = time.time()
+		# update_p1 = Process(target=update,args=(start_time,60,log_folder,count,total))
 		download_p2 = Process(target=start_download,args=(database_folder,filing,n_threads,))
 		download_p2.start()
 		# update_p1.start()
 
-		update(start_time ,60,log_folder,count,total)
+		update(start_time,60,log_folder,count,total)
 		download_p2.join()
-		update_p1.terminate()
+		# update_p1.terminate()
 		print("\n all processed terminated")
 		print("\nDownloading complete.")
 		exit()
 
 	except KeyboardInterrupt:
-	    print ('Interrupted')
+	    print ('Interrupted. Killing process. ')
+	    download_p2.terminate()
 	    try:
-	        sys.exit(0)
+	    	sys.exit(0)
 	    except SystemExit:
 	        os._exit(0)

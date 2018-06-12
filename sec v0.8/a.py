@@ -16,6 +16,7 @@ import requests
 path  = "Database files/2017-QTR1.csv"
 url = "https://www.sec.gov/Archives/edgar/data/1084869/0001437749-18-002143-index.htm"
 
+
 def get_urls(url):
 	soup = BeautifulSoup(requests.get(url).text,'lxml')
 	return [link.get('href') for  link in soup.find_all('a') if link.get('href').startswith('/Archives/edgar/data/')] # COMMON_PREFIX = '/Archives/edgar/data/'
