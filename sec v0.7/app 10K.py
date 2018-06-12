@@ -224,8 +224,11 @@ def update(start,interval,log_folder,count,total):
 
 			filing_indices = compile_logs(log_folder,interval_update=True)
 			completed = len(filing_indices)
-			eta = int(seconds_elapsed / (completed/total))
-			eta_str = datetime.timedelta(seconds=eta)
+			if completed != 0:
+				eta = int(seconds_elapsed / (completed/total))
+				eta_str = datetime.timedelta(seconds=eta)
+			else:
+				eta_str = "No estimation available yet."
 			total_completed = completed + count
 
 			print("This program has run for {:.2f} hours, and downloaded {} filings, at a rate of {:.2f} filings per second.".format((seconds_elapsed/3600),
