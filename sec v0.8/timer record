@@ -1,0 +1,44 @@
+Preparing database...
+Database preparation successful.
+
+Start downloading filings. This will take a while...
+
+
+For 100 filings. Process avg: 0.000 seconds. Latency avg: 4.352 seconds. Iotime avg: 0.002
+For 100 filings. Process avg: 0.000 seconds. Latency avg: 4.400 seconds. Iotime avg: 0.002
+For 100 filings. Process avg: 0.000 seconds. Latency avg: 4.504 seconds. Iotime avg: 0.002
+For 100 filings. Process avg: 0.000 seconds. Latency avg: 4.534 seconds. Iotime avg: 0.002
+For 100 filings. Process avg: 0.000 seconds. Latency avg: 6.841 seconds. Iotime avg: 0.002
+
+For 200 filings. Process avg: 0.000 seconds. Latency avg: 4.693 seconds. Iotime avg: 0.002
+For 200 filings. Process avg: 0.000 seconds. Latency avg: 5.123 seconds. Iotime avg: 0.002
+For 200 filings. Process avg: 0.000 seconds. Latency avg: 5.306 seconds. Iotime avg: 0.002
+For 200 filings. Process avg: 0.000 seconds. Latency avg: 5.451 seconds. Iotime avg: 0.002
+
+
+
+Preparing database...
+Database preparation successful.
+
+For 100 filings. Process avg: 0.000 seconds. Latency avg: 0.453 seconds. Documents downloading avg: 3.085. Documents downloading(including process and io): 3.542 Iotime avg: 0.002
+For 100 filings. Process avg: 0.000 seconds. Latency avg: 0.451 seconds. Documents downloading avg: 3.728. Documents downloading(including process and io): 4.065 Iotime avg: 0.002
+For 100 filings. Process avg: 0.000 seconds. Latency avg: 0.424 seconds. Documents downloading avg: 4.121. Documents downloading(including process and io): 4.349 Iotime avg: 0.002
+For 100 filings. Process avg: 0.000 seconds. Latency avg: 0.431 seconds. Documents downloading avg: 4.227. Documents downloading(including process and io): 4.519 Iotime avg: 0.002
+For 100 filings. Process avg: 0.000 seconds. Latency avg: 0.414 seconds. Documents downloading avg: 4.434. Documents downloading(including process and io): 4.670 Iotime avg: 0.002
+
+
+For 200 filings. Process avg: 0.000 seconds. Latency avg: 0.429 seconds. Documents downloading avg: 3.331. Documents downloading(including process and io): 3.674 Iotime avg: 0.002
+For 200 filings. Process avg: 0.000 seconds. Latency avg: 0.420 seconds. Documents downloading avg: 3.483. Documents downloading(including process and io): 3.724 Iotime avg: 0.002
+For 200 filings. Process avg: 0.000 seconds. Latency avg: 0.436 seconds. Documents downloading avg: 3.707. Documents downloading(including process and io): 3.979 Iotime avg: 0.002
+For 200 filings. Process avg: 0.000 seconds. Latency avg: 0.414 seconds. Documents downloading avg: 4.469. Documents downloading(including process and io): 4.683 Iotime avg: 0.002
+For 200 filings. Process avg: 0.000 seconds. Latency avg: 0.420 seconds. Documents downloading avg: 4.597. Documents downloading(including process and io): 4.881 Iotime avg: 0.002
+
+
+For 300 filings. Process avg: 0.000 seconds. Latency avg: 0.419 seconds. Documents downloading avg: 3.514. Documents downloading(including process and io): 3.814 Iotime avg: 0.002
+For 300 filings. Process avg: 0.000 seconds. Latency avg: 0.424 seconds. Documents downloading avg: 3.596. Documents downloading(including process and io): 3.847 Iotime avg: 0.002
+For 300 filings. Process avg: 0.000 seconds. Latency avg: 0.419 seconds. Documents downloading avg: 3.687. Documents downloading(including process and io): 3.921 Iotime avg: 0.002
+For 300 filings. Process avg: 0.000 seconds. Latency avg: 0.413 seconds. Documents downloading avg: 4.079. Documents downloading(including process and io): 4.374 Iotime avg: 0.002
+
+
+
+39.5 GB for 4.34% for 2018 QTR1 and QTR2 ->  1.82 TB for one year -> 36.4 TB for 20 years -> 7.26 TB with a compression ratio of 0.2

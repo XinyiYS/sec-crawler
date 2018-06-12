@@ -39,7 +39,6 @@ def clear_logs(log_folder):
 		return 
 	try:
 		os.remove(log_folder+"/aggregate log")
-		[os.remove((os.path.join(log_folder, logname))) for logname in os.listdir(log_folder) if logname.endswith('.log')] # remove all the redundant logs
 		return
 	except:
 		return
@@ -68,10 +67,13 @@ def update_database(log_folder,database_path):
 			df.to_csv(updated_database,index=False)
 			os.remove(database_path)
 			os.rename(updated_database,database_path)
+			# print("{}/{} filings from this quarter have been downloaded: {:.2%} complete. Continuing from last download. \n".format(str(completed), str(total), (completed/total) ))
+			clear_logs(log_folder)
 	except:
 		print("An error occured at the update, please redo this step.")
 		return
 
+	[os.remove((os.path.join(log_folder, logname))) for logname in os.listdir(log_folder) if logname.endswith('.log')] # remove all the redundant logs
 	return completed, total
 
 
@@ -85,7 +87,7 @@ def update_all_csvs(database_folder):
 		count += c
 		total += t
 
-	clear_logs(log_folder)
+
 	print("{}/{} filings have been downloaded: {:.2%} complete. Continuing from last download. \n".format(str(count), str(total), (count/total) ))
 	
 	return count,total
@@ -107,7 +109,7 @@ def get_urls(url):
 def get_file(filing_folder_path,url):
 	url= "".join(["https://www.sec.gov",url])
 	filename = url.split('/')[-1]
-	wget.download(url , filing_folder_path + '/'+ filename, bar=None)
+	wget.download(url , filing_folder_path + '/'+ filename)
 	return (url+"\n")
 
 
@@ -121,14 +123,11 @@ def download_data_chunk(chunk):
 
 	process,download_entire,iotime = [],[],[]
 	counter = 0
-	start_time = time.time()
-	update_count = 0
-
 	with open(os.path.join(log_folder,log_name),"a") as log:
-		filing = '10-K'
-		sub_chunk = chunk[chunk['filing'] == filing]
-		for i_, row in sub_chunk[sub_chunk['download']==0].iterrows():
-		# for row_index, row in chunk[chunk['download']==0].iterrows(): # changed for good
+		# filing = '10-K'
+		# sub_chunk = chunk[chunk['filing'] == filing]
+		# for i_, row in sub_chunk[sub_chunk['download']==0].iterrows():
+		for row_index, row in chunk[chunk['download']==0].iterrows(): # changed for good
 			stamps = []
 			
 			# stamps[0]
@@ -170,9 +169,7 @@ def download_data_chunk(chunk):
 					download_log.write(all_urls)
 
 				log.write(str(filing_index)+" ")
-				if (time.time()- start_time) > update_count * 60:
-					log.flush()
-					update_count += 1
+				log.flush()
 
 				# stamps[3]
 				stamps.append(time.time())
@@ -227,63 +224,45 @@ def update(start,interval,log_folder,count,total):
 
 			filing_indices = compile_logs(log_folder,interval_update=True)
 			completed = len(filing_indices)
-			if completed != 0:
-				eta = int(seconds_elapsed / (completed/total))
-				eta_str = datetime.timedelta(seconds=eta)
-			else:
-<<<<<<< HEAD
-				eta_str = "No estimation available yet."
-=======
-				eta_str = "no estimation available yet"
->>>>>>> 6c819e3f41de8e9c8c6417e543cc38c706d7c1d2
+			eta = int(seconds_elapsed / (completed/total))
+			eta_str = datetime.timedelta(seconds=eta)
 			total_completed = completed + count
 
 			print("This program has run for {:.2f} hours, and downloaded {} filings, at a rate of {:.2f} filings per second.".format((seconds_elapsed/3600),
 			str(completed), (completed/seconds_elapsed)))
 			print("{}/{} filings have been downloaded: {:.2%} complete. Estimated time for completion: {}.\n".format(str(total_completed), str(total), (total_completed/total), eta_str))
 			no_intervals+=1
-	return
 
 
 if __name__ == '__main__':
 
+	year = 2017
+	print("Preparing database...")
+	database_folder = "Database files"
+	first_csv_path = os.path.join( database_folder , str(year)+"-QTR1.csv")
+	last_csv_path =  os.path.join( database_folder , "2018-QTR1.csv")
 
-	try:
-		year = 2017
-		print("Preparing database...")
-		database_folder = "Database files"
-		first_csv_path = os.path.join( database_folder , str(year)+"-QTR1.csv")
-		last_csv_path =  os.path.join( database_folder , "2018-QTR1.csv")
+	if not (os.path.exists(first_csv_path) & os.path.exists(last_csv_path)):
+		database_folder = IndexDownloader.download_and_convert(year=year)
+	print("Database preparation successful.")
 
-		if not (os.path.exists(first_csv_path) & os.path.exists(last_csv_path)):
-			database_folder = IndexDownloader.download_and_convert(year=year)
-		print("Database preparation successful.")
+	datafolder = "Downloaded data files"
+	create_folder(datafolder)
 
-		datafolder = "Downloaded data files"
-		create_folder(datafolder)
+	log_folder = "Download logs"
 
-		log_folder = "Download logs"
+	print("\nStart downloading filings. This will take a while...\n")
+	count,total = update_all_csvs(database_folder) # 	count, total = update_database(log_folder ,database)
 
-		print("\nStart downloading filings. This will take a while...\n")
-		count,total = update_all_csvs(database_folder) # 	count, total = update_database(log_folder ,database)
+	start_time = time.time()
+	n_threads = 10
+	update_p1 = Process(target=update,args=(start_time,60,log_folder,count,total))
+	download_p2 = Process(target=start_download,args=(database_folder,n_threads,))
+	download_p2.start()
+	update_p1.start()
+	download_p2.join()
+	update_p1.terminate()
+	print("\n all processed terminated")
+	print("\nDownloading complete.")
+	exit()
 
-		start_time = time.time()
-		n_threads = 3
-		update_p1 = Process(target=update,args=(start_time,60,log_folder,count,total))
-		download_p2 = Process(target=start_download,args=(database_folder,n_threads,))
-		download_p2.start()
-		# update_p1.start()
-
-		update(start_time ,60,log_folder,count,total)
-		download_p2.join()
-		update_p1.terminate()
-		print("\n all processed terminated")
-		print("\nDownloading complete.")
-		exit()
-
-	except KeyboardInterrupt:
-	    print ('Interrupted')
-	    try:
-	        sys.exit(0)
-	    except SystemExit:
-	        os._exit(0)
