@@ -111,7 +111,7 @@ def get_file(filing_folder_path,url):
 	return (url+"\n")
 
 
-def download_data_chunk(chunk):
+def download_data_chunk(chunk, filing ):
 
 	log_folder = "Download Logs"
 	create_folder(log_folder)
@@ -125,7 +125,7 @@ def download_data_chunk(chunk):
 	update_count = 0
 
 	with open(os.path.join(log_folder,log_name),"a") as log:
-		filing = '10-K'
+
 		sub_chunk = chunk[chunk['filing'] == filing]
 		for i_, row in sub_chunk[sub_chunk['download']==0].iterrows():
 		# for row_index, row in chunk[chunk['download']==0].iterrows(): # changed for good
@@ -195,7 +195,7 @@ def download_data_chunk(chunk):
 
 
 # using threadPool, inherently multithreaded
-def start_download(database_folder,n_threads=9):
+def start_download(database_folder,filing,n_threads=9 ):
 
 	log_folder = "Download logs"
 
@@ -204,9 +204,8 @@ def start_download(database_folder,n_threads=9):
 	for csv in csvs:
 
 		pool = ThreadPool(n_threads) # instantiate multiple threads
-
 		df = pd.read_csv(csv,chunksize=10000) # df is just an io iterator
-		pool.map(download_data_chunk, df) # run the threads	
+		pool.starmap(download_data_chunk, zip(df, itertools.repeat(filing))) # run the threads	
 		pool.close() 
 		pool.join() # wait for all to finish
 		
@@ -243,16 +242,11 @@ def update(start,interval,log_folder,count,total):
 
 if __name__ == '__main__':
 
-
 	try:
-		year = 2017
-		print("Preparing database...")
-		database_folder = "Database files"
-		first_csv_path = os.path.join( database_folder , str(year)+"-QTR1.csv")
-		last_csv_path =  os.path.join( database_folder , "2018-QTR1.csv")
-
-		if not (os.path.exists(first_csv_path) & os.path.exists(last_csv_path)):
-			database_folder = IndexDownloader.download_and_convert(year=year)
+		from_year = 2017
+		to_year = 2018
+		print("Preparing database...Please do not interrupt the program.")
+		database_folder = IndexDownloader.prepare_database(begin=from_year, end=to_year)
 		print("Database preparation successful.")
 
 		datafolder = "Downloaded data files"
@@ -265,8 +259,9 @@ if __name__ == '__main__':
 
 		start_time = time.time()
 		n_threads = 3
+		filing = '10-K'
 		update_p1 = Process(target=update,args=(start_time,60,log_folder,count,total))
-		download_p2 = Process(target=start_download,args=(database_folder,n_threads,))
+		download_p2 = Process(target=start_download,args=(database_folder,filing,n_threads,))
 		download_p2.start()
 		# update_p1.start()
 
