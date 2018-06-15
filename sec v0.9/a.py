@@ -29,30 +29,17 @@ def get_file(filing_folder_path,url):
 
 
 
+from Exceptions import GetUrlException
+from Exceptions import DownloadException
+from Exceptions import LoggingException
 
-start = time.time()
-# parallel 
-for i in range(20):
-	pool = ThreadPool(len(urls)) # instantiate multiple threads
-	all_urls = (url+"\n") + "".join(pool.starmap(get_file, zip(itertools.repeat("parallel without reuse"), urls)))
-	pool.close() 
-	pool.join() # wait for all to finish
+try:
+	# raise(GetUrlException("CANt fetch url",0))
+	raise(Exception("htm link","disk locations"))
+	# raise(LoggingException("logging path"))
 
-
-print(time.time()-start)
-
-start = time.time()
-for i in range(20):
-# parrallel with connection open
-	with requests.Session() as s:
-		soup = BeautifulSoup(s.get(url).text,'lxml')
-		urls = [link.get('href') for  link in soup.find_all('a') if link.get('href').startswith('/Archives/edgar/data/')] # COMMON_PREFIX = '/Archives/edgar/data/'
-		pool = ThreadPool(len(urls)) # instantiate multiple threads
-		all_urls = (url+"\n") + "".join(pool.starmap(get_file, zip(itertools.repeat("parallel with reuse"), urls)))
-		pool.close() 
-		pool.join() # wait for all to finish
-print(time.time()-start)
-
+except Exception as e:
+	print((e.args[0]))
 
 
 

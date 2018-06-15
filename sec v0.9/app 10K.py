@@ -12,6 +12,9 @@ from math import ceil
 import pandas as pd 
 from bs4 import BeautifulSoup
 import requests,sys
+from Exceptions import GetUrlException
+from Exceptions import DownloadException
+from Exceptions import LoggingException
 
 
 def compile_logs(log_folder,interval_update=False):
@@ -129,11 +132,7 @@ def download_data_chunk(chunk, filing ):
 
 		sub_chunk = chunk[chunk['filing'] == filing]
 		for i_, row in sub_chunk[sub_chunk['download']==0].iterrows():
-		# for row_index, row in chunk[chunk['download']==0].iterrows(): # changed for good
-			stamps = []
 			
-			# stamps[0]
-			stamps.append(time.time())
 			filing_index = row['index']
 			comn = row['comn']
 			htm = row['htm']
@@ -147,51 +146,41 @@ def download_data_chunk(chunk, filing ):
 				filing = quote(filing, safe='') # use percent encoding to escape the slash # use urllib.parse.unquote(encoded_str,'utf8') to decode
 			filing_folder_name = ' '.join([str(filing_index),str(cik),str(date_str),str(filing)])
 			filing_folder_path = '/'.join([datafolder, yr_qtr , filing ,  filing_folder_name])
-
-			# print('Start fetching URL to', comn, filing, 'filed on', date, '...')
-			# start_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
 			
 			create_folder(filing_folder_path)
-
-			urls = get_urls(htm)
-
-			# stamps[1]
-			stamps.append(time.time())
-
 			try:
 
-				pool = ThreadPool(len(urls)) # instantiate multiple threads
-				all_urls = (htm+"\n") + "".join(pool.starmap(get_file, zip(itertools.repeat(filing_folder_path), urls)))
-				pool.close() 
-				pool.join() # wait for all to finish
-				# stamps[2]
-				stamps.append(time.time())
+				try:
+					urls = get_urls(htm)
+				except:
+					raise(GetUrlException(htm))
 
-				with open(filing_folder_path+'/'+'download.log', 'w', newline='') as download_log:
-					download_log.write(all_urls)
+				try:
+
+					pool = ThreadPool(len(urls)) # instantiate multiple threads
+					all_urls = (htm+"\n") + "".join(pool.starmap(get_file, zip(itertools.repeat(filing_folder_path), urls)))
+					pool.close() 
+					pool.join() # wait for all to finish
+				except:
+					raise(DownloadException(htm,filing_folder_path))
+
+				try:
+					with open(filing_folder_path+'/'+'download.log', 'w', newline='') as download_log:
+						download_log.write(all_urls)
+				except:
+					raise(LoggingException(filing_folder_path+'/'+'download.log'))
 
 				log.write(str(filing_index)+" ")
 				if (time.time()- start_time) > update_count * 60:
 					log.flush()
 					update_count += 1
 
-				# stamps[3]
-				stamps.append(time.time())
-				
-				process.append(stamps[1]-stamps[0])
-				download_entire.append(stamps[2]-stamps[1])
-				iotime.append(stamps[3]-stamps[2])
-				
-			except:
+			except Exception as e:
 				with open(os.path.join(log_folder,'error log'),"a") as error_log:
+					error_msg =  e.message
+					error_htm = "{} {} {} {} {} \n".format(htm, str(filing_index), filing ,str(cik), yr_qtr)
 					error_log.write(htm+"\n")
-
-			counter+=1
-			if( counter % 100==0):
-				# timelog.write("For {} filings. Process avg: {:.3f} seconds. Latency avg: {:.3f} seconds. Iotime avg: {:.3f}".format(str(counter),np.mean(process),np.mean(latency),np.mean(iotime)))
-				print("For {} filings. Process avg: {:.3f} seconds. Documents downloading avg: {:.3f}. \
-					Iotime avg: {:.3f}".format(str(counter),np.mean(process), np.mean(download_entire),np.mean(iotime)))
-
+					
 	return
 
 
@@ -255,11 +244,10 @@ if __name__ == '__main__':
 
 		log_folder = "Download logs"
 
-
 		filing = '10-K'
 		count,total = update_all_csvs(database_folder,filing)  #  count, total = update_database(log_folder ,database)
+		
 		n_threads = 3
-
 		print("\nStart downloading filings. This will take a while...\n")
 		start_time = time.time()
 		# update_p1 = Process(target=update,args=(start_time,60,log_folder,count,total))

@@ -39,14 +39,13 @@ def download_index_files(history , backwards = True):
 			    paths.append(path)
 	return paths
 
-def all_txt_to_csv(crawlerfolder,database_folder,paths):
+def all_txt_to_csv(crawlerfolder,database_folder,downloaded_txts):
 	create_folder(database_folder)
 
-	paths = sorted([ (os.path.join(crawlerfolder, filename)) for filename in paths if filename.endswith('.txt')])
 	startIndex = 0
-	for path in paths:
-		targetPath = path.replace(crawlerfolder,database_folder)[:-4]+".csv"
-		startIndex = create_csv(path,targetPath,startIndex)
+	for downloaded_txt in sorted(downloaded_txts):
+		targetPath = downloaded_txt.replace(crawlerfolder,database_folder)[:-4]+".csv"
+		startIndex = create_csv(downloaded_txt,targetPath,startIndex)
 	return 
 
 def create_csv(path,targetPath,startIndex):
