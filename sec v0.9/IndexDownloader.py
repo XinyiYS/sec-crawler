@@ -21,9 +21,6 @@ def download_index_files(history , backwards = True):
 	urls = ['https://www.sec.gov/Archives/edgar/full-index/%d/%s/crawler.idx' % (x[0], x[1]) for x in history]
 	urls.sort()
 
-	if backwards:
-		urls = urls[::-1] # download backwards
-
 	crawlerfolder = "Downloaded index files"
 	create_folder(crawlerfolder)
 

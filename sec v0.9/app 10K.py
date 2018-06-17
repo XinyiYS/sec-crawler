@@ -190,7 +190,7 @@ def start_download(database_folder,filing,n_threads=9 ):
 	log_folder = "Download logs"
 
 	database_folder = "Database files"
-	csvs = sorted([ (os.path.join(database_folder, csv)) for csv in os.listdir(database_folder) if csv.endswith('.csv')])[::-1]
+	csvs = sorted([ (os.path.join(database_folder, csv)) for csv in os.listdir(database_folder) if csv.endswith('.csv')])[::-1] # download in reverse order
 	for csv in csvs:
 
 		pool = ThreadPool(n_threads) # instantiate multiple threads

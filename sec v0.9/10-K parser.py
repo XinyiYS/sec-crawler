@@ -52,15 +52,9 @@ class MyHTMLParser(HTMLParser):
         print("Decl     :", data)
 
 soup = BeautifulSoup (open("form10k.htm"),'lxml')
-parser = MyHTMLParser()
-parser.feed(soup.prettify())
+# parser = MyHTMLParser()
+# parser.feed(soup.prettify())
 
-#printing the extracted values
-# print("Start tags", parser.lsStartTags)
-# print("End tags", parser.lsEndTags)
-# print("Start End tags", parser.lsStartEndTags)
-# print("Comments", parser.lsComments)
-exit()
 
 
 content = soup.prettify()
@@ -72,9 +66,19 @@ print(name)
 begin = content.find(name)
 end = content.rfind(name)
 print(begin,end+len(name))
-print("*************************")
-a= BeautifulSoup(content[begin:end],'lxml')
-print(get_delim_text(a))
+
+
+
+a = BeautifulSoup(content[begin:end],'lxml')
+print(content[begin:end])
+# with open("try.xml","w") as xml:
+	# xml.write(content[begin:end])
+
+
+# print(get_delim_text(a))
+
+
+
 exit()
 
 

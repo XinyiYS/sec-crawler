@@ -7,8 +7,8 @@ from os import walk
 import os,re
 
 def get_filing_folders(folder_to_clean,filing = '10-K'):
-	return [dirpath for (dirpath, dirnames, filenames) in walk(folder_to_clean)
-					if len(dirpath.split("/")) == 4] # check if windows compatible
+	return [dirpath for (dirpath, dirnames, filenames) in walk(folder_to_clean)]
+					# if  len(dirpath.split("\\")) == 4 or len(dirpath.split("/")) == 4] # check if windows compatible
 
 def get_urls(url):
 	soup = BeautifulSoup(requests.get(url).text,'lxml')
@@ -16,7 +16,7 @@ def get_urls(url):
 
 def remove_duplicates(dirpath):
 	download_log = "download.log"
-	if(not os.path.exists(os.path.join(dirpath,download_log))): # download still not complete
+	if(not os.path.exists(os.path.join(dirpath,download_log))): # checks if valid folder to clean
 		return
 	with open(os.path.join(dirpath,download_log),'r') as referrence:
 		lines = referrence.readlines()
@@ -41,8 +41,9 @@ def clean_folder(folder_to_clean):
 	# pool.starmap(remove_duplicates, dirpaths)
 	# pool.close() 
 	# pool.join() # wait for all to finish
-	print("all subdirectories are removed of duplicates")
 	return
 
 folder_to_clean = "Downloaded data files"
+print(folder_to_clean+ " starting removing dupliates")
 clean_folder(folder_to_clean)
+print(folder_to_clean + " finished removing duplicates")
