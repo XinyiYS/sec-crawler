@@ -199,7 +199,7 @@ def start_download(database_folder,filing,n_threads=9 ):
 		pool.close() 
 		pool.join() # wait for all to finish
 		
-		update_database(log_folder ,csv)
+		update_database(log_folder ,csv, filing)
 
 	print("all done.")
 	return
