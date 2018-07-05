@@ -1,0 +1,15 @@
+Hello,
+
+I've assigned the following IP space for your use.
+
+23.111.163.208/29
+
+GW: 23.111.163.2089
+
+Netmask: 255.255.255.248
+
+Usable: 23.111.163.210 - 23.111.163.214
+
+dns: 
+66: 96:80:194
+66: 96:80:43
