@@ -60,11 +60,13 @@ def update_database(log_folder,database_path,filing):
 	filing_indices = compile_logs(log_folder)
 	try:
 		df = pd.read_csv(database_path)
-		df = df[df['filing'] == filing]
+
+		subdf = df[df['filing'] == filing]
+
 		total = len(df)
 		completed = 0
 
-		if len(df.loc[df['index'].isin(filing_indices)]) !=  0:
+		if len(subdf.loc[subdf['index'].isin(filing_indices)]) !=  0:
 
 			df.loc[df['index'].isin(filing_indices), 'download'] = int(1)
 			completed = df['download'].sum()
@@ -72,6 +74,8 @@ def update_database(log_folder,database_path,filing):
 			df.to_csv(updated_database,index=False)
 			os.remove(database_path)
 			os.rename(updated_database,database_path)
+		clear_logs(log_folder)
+		
 	except:
 		print("An error occured at the update, please redo this step.")
 		return
