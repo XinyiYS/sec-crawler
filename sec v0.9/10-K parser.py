@@ -27,7 +27,7 @@ def get_dict(keys,values):
     for i in range(len(keys)):
         look_up[keys[i]] = values[i]
     return look_up
-
+ 
 def get_link(soup,item_number,item_name=None):
 
     item_numbers = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16]
